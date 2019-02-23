@@ -13,6 +13,8 @@ import numpy as np
 from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, \
                        PASS, is_black_white, coord_to_point, where1d, \
                        MAXSIZE, NULLPOINT
+#from alphabeta_depth_limited import callAlphabetaDL
+import time
 
 class SimpleGoBoard(object):
 
@@ -418,3 +420,10 @@ class SimpleGoBoard(object):
                 return True, BLACK
 
         return False, None
+    def staticallyEvaluateForToPlay(self):
+        
+        return 1
+    
+    def undoMove(self,m):
+        self.board[m] = EMPTY
+        self.current_player = GoBoardUtil.opponent(self.current_player)

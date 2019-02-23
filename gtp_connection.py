@@ -12,6 +12,9 @@ from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, PASS, \
                        MAXSIZE, coord_to_point
 import numpy as np
 import re
+from alphabeta_depth_limited import callAlphabetaDL
+import signal, os
+import time
 
 class GtpConnection():
 
@@ -49,7 +52,9 @@ class GtpConnection():
             "gogui-rules_side_to_move": self.gogui_rules_side_to_move_cmd,
             "gogui-rules_board": self.gogui_rules_board_cmd,
             "gogui-rules_final_result": self.gogui_rules_final_result_cmd,
-            "gogui-analyze_commands": self.gogui_analyze_cmd
+            "gogui-analyze_commands": self.gogui_analyze_cmd,
+            "timelimit":self.timelimit_cmd,
+            "solve": self.solve_cmd
         }
 
         # used for argument checking
@@ -61,8 +66,11 @@ class GtpConnection():
             "known_command": (1, 'Usage: known_command CMD_NAME'),
             "genmove": (1, 'Usage: genmove {w,b}'),
             "play": (2, 'Usage: play {b,w} MOVE'),
-            "legal_moves": (1, 'Usage: legal_moves {w,b}')
+            "legal_moves": (1, 'Usage: legal_moves {w,b}'),
+            "timelimit": (1,'Usage: timelimit INT'),
+            "solve": (0,"Usage: solve")
         }
+        self.time_limit = 1
     
     def write(self, data):
         stdout.write(data) 
@@ -346,7 +354,57 @@ class GtpConnection():
                      "pstring/Rules GameID/gogui-rules_game_id\n"
                      "pstring/Show Board/gogui-rules_board\n"
                      )
-
+    def timelimit_cmd(self,args):
+        try:
+            timLimit = int(args[0])
+            if timLimit not in range(1,101):
+                raise ValueError
+        except:
+            self.respond("Error: timelimit is out of range. (1<= timelimit <= 100)")
+        else:
+            self.time_limit = timLimit
+            self.respond()
+            
+   
+    def solve_cmd(self, args):
+        #timeLimit = self.time_limit
+        def handler( signum,frame):
+            raise IOError("Couldn't find winner and move in time.")
+            
+        start = time.time()
+        try:
+            signal.signal(signal.SIGALRM, handler)
+            signal.alarm(self.time_limit)
+            move, winner = callAlphabetaDL(self.board,5,self.board.current_player)
+            if winner == -1:
+                winner_1 = GoBoardUtil.opponent(self.board.current_player)
+                if winner_1 == 1:
+                    winner_1 = "b"
+                elif winner_1 == 2:
+                    winner_1 = "w"
+                signal.alarm(0)
+                self.respond(winner_1)
+            elif winner == 0:
+                winner_1 = "draw"
+                signal.alarm(0)
+                self.respond( winner_1)
+            else:
+                winner_1 = self.board.current_player
+                if winner_1 == 1:
+                    winner_1 = "b"
+                elif winner_1 == 2:
+                    winner_1 = "w"
+                signal.alarm(0)
+                self.respond(winner_1 + "[" + str(move) + "]")
+                
+            signal.alarm(0)
+            
+        except IOError:
+            self.respond("unknown")
+            
+        
+        
+        
 def point_to_coord(point, boardsize):
     """
     Transform point given as board array index 
