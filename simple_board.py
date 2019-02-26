@@ -9,6 +9,7 @@ Implements a basic Go board with functions to:
 The board uses a 1-dimensional representation with padding
 """
 
+#from sys import stdout
 import numpy as np
 from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, \
                        PASS, is_black_white, coord_to_point, where1d, \
@@ -379,6 +380,7 @@ class SimpleGoBoard(object):
                     break
             else:
                 break
+        #print("5-count = {}".format(count))
         assert count <= 5
         return count == 5
     
@@ -420,10 +422,120 @@ class SimpleGoBoard(object):
                 return True, BLACK
 
         return False, None
-    def staticallyEvaluateForToPlay(self):
+    def staticallyEvaluateForToPlay(self,color):
+        ##############################
+        ## value addition
+        # initialize value to zero
+        value = 0
         
-        return 1
+        #check all points on board
+        for m in range(self.NS+1,self.NS**2-1):
+            # value ++ for toplay
+            if self.board[m] == self.current_player:
+                if self.point_check_game_end_gomoku(m): 
+                    return 10000000
+                elif self.check_connect4_all_direction(m): 
+                    return 10000000
+                value += 50*self.check_connect3_all_direction(m)
+        return value
+
+    
     
     def undoMove(self,m):
         self.board[m] = EMPTY
         self.current_player = GoBoardUtil.opponent(self.current_player)
+        
+        
+    
+    def check_connect_n(self, point, shift, n):
+        """
+        Check if the point has n-connect condition in a direction
+        for the game of Gomoko.
+        """
+        temp = set()
+        
+        color = self.board[point]
+        count = 1
+        d = shift
+        p = point
+        temp.add(p)
+        while True:
+            p = p + d
+            if self.board[p] == color:
+                temp.add(p)#
+                count = count + 1
+                if count == n:
+                    #
+                    assert count <= n
+                    ##print(temp)
+                    temp = list(temp)
+                    if max(temp)+d>self.NS**2-1 or self.board[max(temp)+d]!=0: return False
+                    if min(temp)-n*d<self.NS+1 or self.board[min(temp)-n*d]!=0: return False
+                    #
+                    else: 
+                        return True
+            else:
+                break
+        
+        d = -d
+        p = point
+        temp.add(p)
+        while True:
+            p = p + d
+            if self.board[p] == color:
+                temp.add(p)#
+                count = count + 1
+                if count == n:
+                    assert count <= n
+                    ##print(temp)
+                    temp = list(temp)
+                    if max(temp)+d>self.NS**2-1 or self.board[max(temp)+d]!=0: return False
+                    if min(temp)-n*d<self.NS+1 or self.board[min(temp-n*d)]!=0: return False
+                    #
+                    else: 
+                        return True
+            else:
+                break
+            
+        return False
+        
+        ##print('count = {}, n = {}'.format(count,n))
+        #assert count <= n
+        #return count == n    
+    
+    def check_connect4_all_direction(self,point):
+        """
+            Check if the point causes the game end for the game of Gomoko.
+            """
+        # check horizontal
+        if self.check_connect_n(point, 1, 4):
+            ##print("4-hori")
+            return True
+        # check vertical
+        if self.check_connect_n(point, self.NS, 4):
+            ##print("4-vert")
+            return True
+        # check y=x
+        if self.check_connect_n(point, self.NS + 1, 4):
+            ##print("4-yx")
+            return True
+        # check y=-x
+        if self.check_connect_n(point, self.NS - 1, 4):
+            ##print("4-y-x")
+            return True
+        return False
+    
+    def check_connect3_all_direction(self,point):
+        """
+            Check if the point causes the game end for the game of Gomoko.
+            """
+        count = 0
+        # check horizontal
+        if self.check_connect_n(point, 1, 3):count+=1
+        # check vertical
+        if self.check_connect_n(point, self.NS, 3):count+=1
+        # check y=x
+        if self.check_connect_n(point, self.NS + 1, 3):count+=1
+        # check y=-x
+        if self.check_connect_n(point, self.NS - 1, 3):count+=1
+        return count

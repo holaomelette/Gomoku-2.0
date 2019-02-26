@@ -134,6 +134,7 @@ class GoBoardUtil(object):
         np.random.shuffle(moves)
         return moves[0]
 
+
     @staticmethod       
     def generate_random_move(board, color, use_eye_filter):
         """

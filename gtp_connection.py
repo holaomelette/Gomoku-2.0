@@ -266,7 +266,10 @@ class GtpConnection():
             else:
                 self.respond("resign")
             return
-        move = self.go_engine.get_move(self.board, color)
+        try:
+            self.solve_cmd()
+        except:
+            move = self.go_engine.get_move(self.board, color)
         if move == PASS:
             self.respond("pass")
             return
@@ -375,34 +378,41 @@ class GtpConnection():
         try:
             signal.signal(signal.SIGALRM, handler)
             signal.alarm(self.time_limit)
+            current_player = self.board.current_player
             move, winner = callAlphabetaDL(self.board,5,self.board.current_player)
             if winner == -1:
-                winner_1 = GoBoardUtil.opponent(self.board.current_player)
+                winner_1 = GoBoardUtil.opponent(current_player)
                 if winner_1 == 1:
                     winner_1 = "b"
                 elif winner_1 == 2:
                     winner_1 = "w"
                 signal.alarm(0)
-                self.respond(winner_1)
+                self.respond(str(winner_1)) 
             elif winner == 0:
                 winner_1 = "draw"
                 signal.alarm(0)
-                self.respond( winner_1)
+                self.respond( str(winner_1) + " [" +self.modify_move(move) + "]")
             else:
-                winner_1 = self.board.current_player
+                winner_1 = current_player
                 if winner_1 == 1:
                     winner_1 = "b"
                 elif winner_1 == 2:
                     winner_1 = "w"
                 signal.alarm(0)
-                self.respond(winner_1 + "[" + str(move) + "]")
+                self.respond( str(winner_1) + " [" +self.modify_move(move) + "]")
                 
             signal.alarm(0)
             
         except IOError:
             self.respond("unknown")
             
-        
+    def modify_move(self,move):
+        if move == None:
+            return ""
+        else:
+            coord = point_to_coord(move,self.board.size)
+            letter = chr(coord[1]+96).upper()
+            return str(letter)+str(coord[0])
         
         
 def point_to_coord(point, boardsize):
