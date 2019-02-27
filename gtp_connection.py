@@ -266,10 +266,13 @@ class GtpConnection():
             else:
                 self.respond("resign")
             return
+        
         try:
-            self.solve_cmd()
+            winner, move = GoBoardUtil.solve_gomoku(self.board, color)
+            #self.solve_cmd()
         except:
             move = self.go_engine.get_move(self.board, color)
+            
         if move == PASS:
             self.respond("pass")
             return
@@ -370,7 +373,7 @@ class GtpConnection():
             
    
     def solve_cmd(self, args):
-        #timeLimit = self.time_limit
+        timeLimit = self.time_limit
         def handler( signum,frame):
             raise IOError("Couldn't find winner and move in time.")
             
@@ -391,7 +394,7 @@ class GtpConnection():
             elif winner == 0:
                 winner_1 = "draw"
                 signal.alarm(0)
-                self.respond( str(winner_1) + " [" +self.modify_move(move) + "]")
+                self.respond( str(winner_1) + " " +self.modify_move(move))
             else:
                 winner_1 = current_player
                 if winner_1 == 1:
@@ -399,7 +402,7 @@ class GtpConnection():
                 elif winner_1 == 2:
                     winner_1 = "w"
                 signal.alarm(0)
-                self.respond( str(winner_1) + " [" +self.modify_move(move) + "]")
+                self.respond( str(winner_1) + " " +self.modify_move(move))
                 
             signal.alarm(0)
             

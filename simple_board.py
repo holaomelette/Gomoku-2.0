@@ -17,6 +17,22 @@ from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, \
 #from alphabeta_depth_limited import callAlphabetaDL
 import time
 
+
+wins = {
+    "01111": True,
+    "10111": True,
+    "11011": True,
+    "11101": True,
+    "11110": True,
+    "02222": False,
+    "20222": False,
+    "22022": False,
+    "22202": False,
+    "22220": False,
+}
+
+
+
 class SimpleGoBoard(object):
 
     def get_color(self, point):
@@ -384,6 +400,41 @@ class SimpleGoBoard(object):
         assert count <= 5
         return count == 5
     
+    def check_will_win(self):
+        """
+        Check if the point has connect5 condition in a direction
+        for the game of Gomoko.
+        """
+        
+        # check horizontal
+        for x in range(1,self.size+1):
+            for y in range(self.NS-5):
+                a = ""
+                for i in range(1,6):
+                    a=a+str(self.board[x*self.NS+y+i])
+                ##print("--------------------a = {}".format(a))
+                if a in wins:
+                    ##print(">>>>>>>>>>>>>>>>>>> wins[a] = {}".format(wins[a]))
+                    if wins[a]: 
+                        
+                        return wins[a],1
+                
+        # check vertical
+        for x in range(1,self.size+1):
+            for y in range(self.NS-5):
+                a = ""
+                for i in range(1,6):
+                    a = a+str(self.board[(y+i)*self.NS+x])
+                ##print("--------------------a = {}".format(a))
+                if a in wins:
+                    ##print(">>>>>>>>>>>>>>>>>>> wins[a] = {}".format(wins[a]))
+                    if wins[a]: return wins[a],1
+        
+        # check diagonal
+        ###            
+        return False, None
+    
+    
     def point_check_game_end_gomoku(self, point):
         """
             Check if the point causes the game end for the game of Gomoko.
@@ -413,6 +464,11 @@ class SimpleGoBoard(object):
         white_points = where1d(self.board == WHITE)
         black_points = where1d(self.board == BLACK)
         
+        iswin,winner = self.check_will_win()
+        if iswin: 
+            ##print("win, winner is {}".format(winner))
+            return iswin,winner
+        
         for point in white_points:
             if self.point_check_game_end_gomoku(point):
                 return True, WHITE
@@ -427,17 +483,29 @@ class SimpleGoBoard(object):
         ## value addition
         # initialize value to zero
         value = 0
+        win_color = self.check_game_end_gomoku()[1]
+        assert win_color != self.current_player
+        ##print(win_color)
+        if win_color == None: 
+            ##print("<<<<<<<<<<<<<< 1")
+            return 0
+        else: return -1      
         
-        #check all points on board
-        for m in range(self.NS+1,self.NS**2-1):
-            # value ++ for toplay
-            if self.board[m] == self.current_player:
-                if self.point_check_game_end_gomoku(m): 
-                    return 10000000
-                elif self.check_connect4_all_direction(m): 
-                    return 10000000
-                value += 50*self.check_connect3_all_direction(m)
-        return value
+        
+        ##check all points on board
+        #for m in range(self.NS+1,self.NS**2-1):
+            ## value ++ for toplay
+            #if self.board[m] == self.current_player:
+                ##if self.point_check_game_end_gomoku(m): 
+                    ##print("board end 5")
+                    ##return 1000
+                #if self.check_connect4_all_direction(m): 
+                    #print("board end 4")
+                    #return 1000
+                #value += 50*self.check_connect3_all_direction(m)
+        #return value
+    
+        
 
     
     

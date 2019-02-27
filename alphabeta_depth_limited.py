@@ -7,23 +7,25 @@ INFINITY = 1000000
 from board_util import GoBoardUtil
 # depth-limited alphabeta
 
-current_color = None
+
 
 def alphabetaDL(state, alpha, beta, depth, color):
+    
+    
     
     pt = None
     win = None
     
     check_end = state.check_game_end_gomoku()
     if check_end[0] or depth == 0 or len(state.get_empty_points())==0:
-        ##print(">>>game end = {}, color = {}, winner = {}".format(check_end[0],color,check_end[1]))
+        ##print(">>>game end = {}, color = {}, winner = {}".format(check_end[0],state.current_player,check_end[1]))
         if not check_end[0]:
-            return state.staticallyEvaluateForToPlay(color) ,pt , 0
+            return state.staticallyEvaluateForToPlay(state.current_player) ,pt , 0
         else: 
             #return state.staticallyEvaluateForToPlay(color) ,pt , check_end[1]
-            if color == check_end[1]:
-                return state.staticallyEvaluateForToPlay(color) ,pt , -1
-            else: return -state.staticallyEvaluateForToPlay(color) ,pt , 1
+            if state.current_player == check_end[1]:
+                return state.staticallyEvaluateForToPlay(state.current_player) ,pt , -1
+            else: return state.staticallyEvaluateForToPlay(state.current_player) ,pt , 1
         
     
     #check_end = state.check_game_end_gomoku()
@@ -35,30 +37,36 @@ def alphabetaDL(state, alpha, beta, depth, color):
 
     ##print("\n-all empty points: {}".format(state.get_empty_points()))
     for m in state.get_empty_points():
-        ##print("take move m = {}, evaluate value, m_1 and win_1".format(m))
         
-        temp_state = state.copy()
+        ##print("{} take move m = {}, evaluate value, m_1 and win_1".format(state.current_player,m))
         
-        temp_state.play_move_gomoku(m,color)
+        #temp_state = state.copy()
+        
+        state.play_move_gomoku(m,color)
+        ##print(str(GoBoardUtil.get_twoD_board(state)))
+        ##print("alpha = {}, beta = {}".format(alpha, beta))
         pt = m
         # alternate turn
-        value, m_1, win_1 = alphabetaDL(temp_state, -beta, -alpha, depth - 1,GoBoardUtil.opponent(color))
+        value, m_1, win_1 = alphabetaDL(state, -beta, -alpha, depth - 1,state.current_player)
         value = -int(value)
         win = win_1
-        ##print("value = {}, m_1 = {}, win_1 = {}".format(value,m_1,win_1))
+        ##print("-value = {}, m = {}, m_1 = {}, win_1 = {}".format(value,m, m_1,win_1))
+        ##print("alpha = {}, beta = {}".format(alpha, beta))
         if value > alpha:
             alpha = value
-        temp_state.undoMove(m)
+        ##    print("alpha = value = {}".format(alpha))
+        state.undoMove(m)
         ##print("value = {}, beta = {}, pt={}".format(value,beta,pt))
-        if value > beta: 
-            return beta, m_1, win_1  
-        elif value == beta:
-            return beta, m_1, win_1
-    return alpha, pt, win
+        if value >= beta: 
+        ##    print(">>>return beta = {}, m = {}, win = {}".format(beta,m,win))
+            return beta, m, win 
+        ##print("after move({}), alpha = {}, beta = {}".format(m,alpha, beta))
+    ##print(">>>after all, alpha = {}, beta = {}".format(alpha, beta))
+    ##print(">>>return alpha = {}, pt = {}, win = {}".format(alpha,m,win))    
+    return alpha, m, win
 
 # initial call with full window
 def callAlphabetaDL(rootState, depth, color):
-    current_color = color
     value,move,winner = alphabetaDL(rootState, -INFINITY, INFINITY, depth, color)
     
     if winner!=0:

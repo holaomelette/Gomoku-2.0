@@ -175,3 +175,17 @@ class GoBoardUtil(object):
             start = goboard.row_start(row + 1)
             board2d[row, :] = goboard.board[start : start + size]
         return board2d
+    
+    @staticmethod
+    def solve_gomoku(board, player):
+        assert(player == BLACK or player == WHITE)
+        current_player = player
+        move, winner = callAlphabetaDL(self.board,5,current_player)
+        if winner == -1:
+            winner_1 = GoBoardUtil.opponent(current_player)
+            self.respond(str(winner_1)) 
+        elif winner == 0:
+            winner_1 = 0
+        else:
+            winner_1 = current_player
+        return winner_1, move    
